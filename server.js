@@ -11,6 +11,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import connectDB from './src/config/db.js';
 
 
 dotenv.config();
@@ -21,12 +22,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Database Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch((err) => {
-    console.error('❌ MongoDB Error:', err);
-    process.exit(1);
-  });
+(async () => {
+  try {
+    await connectDB();
+  } catch (err) {
+    // In development, keep the API server up so /health and other non-DB features work.
+    // Routes that depend on Mongo will still fail until the connection is available.
+    console.error('❌ MongoDB Error: could not connect:', err?.message || err);
+  }
+})();
 
 // Security Middlewares
 app.use(helmet({

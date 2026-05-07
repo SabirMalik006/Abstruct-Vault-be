@@ -16,7 +16,12 @@ const categories = [
 
 const seedCategories = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('Missing MongoDB connection string. Set `MONGO_URI` in your .env.');
+    }
+
+    await mongoose.connect(uri);
     console.log('Connected to MongoDB');
     
     await Category.deleteMany({});

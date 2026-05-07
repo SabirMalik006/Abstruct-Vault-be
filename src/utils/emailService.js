@@ -9,10 +9,10 @@ const stripHtmlToText = (html = '') =>
   html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const getEmailConfig = () => {
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'send@thehorizonhub.com';
-  const fromName = process.env.RESEND_FROM_NAME || process.env.COMPANY_NAME || 'Horizon Supplies';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'send@theabstructvault.com';
+  const fromName = process.env.RESEND_FROM_NAME || process.env.COMPANY_NAME || 'The Abstruct Vault';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const adminContactEmail = process.env.ADMIN_CONTACT_EMAIL || 'horizonintegeratedsolutions@gmail.com';
+  const adminContactEmail = process.env.ADMIN_CONTACT_EMAIL || 'info@theabstructvault.com';
 
   return { fromEmail, fromName, frontendUrl, adminContactEmail };
 };
@@ -70,7 +70,7 @@ export const sendEmail = async (to, subject, html, replyTo) => {
 // 1) Welcome email (New user registration)
 // ============================================
 export const sendWelcomeEmail = async (email, name) => {
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const { frontendUrl } = getEmailConfig();
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -94,7 +94,7 @@ export const sendWelcomeEmail = async (email, name) => {
 // resetToken expires in 1 hour (handled in auth controller)
 // ============================================
 export const sendPasswordResetEmail = async (email, name, resetToken) => {
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const { frontendUrl } = getEmailConfig();
   const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}&email=${encodeURIComponent(email)}`;
 
@@ -122,7 +122,7 @@ export const sendPasswordResetEmail = async (email, name, resetToken) => {
 // 3) Order confirmation email (Order placed)
 // ============================================
 export const sendOrderConfirmationEmail = async (email, name, orderDetails) => {
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const { frontendUrl } = getEmailConfig();
   const orderId = orderDetails?._id || orderDetails?.id || '';
   const items = orderDetails?.orderItems || orderDetails?.items || [];
@@ -175,7 +175,7 @@ export const sendOrderConfirmationEmail = async (email, name, orderDetails) => {
 // userData: { name, email, phone?, subject, message }
 // ============================================
 export const sendContactEmails = async (userData) => {
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const { adminContactEmail } = getEmailConfig();
 
   const adminHtml = `
@@ -219,7 +219,7 @@ export const sendContactEmails = async (userData) => {
 // ------------------------------------------------------------------
 export const sendPasswordResetOTP = async (user, otp) => {
   // Keep old OTP email flow for current frontend (ResetPassword.jsx uses otp)
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #c4a47a;">Password Reset OTP</h2>
@@ -237,7 +237,7 @@ export const sendOrderConfirmation = async (order, user) => {
 };
 
 export const sendOrderStatusUpdate = async (order, user, oldStatus, newStatus) => {
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const { frontendUrl } = getEmailConfig();
   const orderId = order?._id || '';
   const viewUrl = orderId ? `${frontendUrl}/dashboard/orders/${orderId}` : `${frontendUrl}/dashboard/orders`;
@@ -261,7 +261,7 @@ export const sendOrderStatusUpdate = async (order, user, oldStatus, newStatus) =
 
 export const sendContactEmail = async (contactData) => {
   // Admin-only email (legacy). New flow is sendContactEmails()
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const { adminContactEmail } = getEmailConfig();
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
@@ -282,7 +282,7 @@ export const sendContactEmail = async (contactData) => {
 };
 
 export const sendContactReply = async (contact, replyMessage) => {
-  const company = process.env.COMPANY_NAME || 'Horizon Supplies';
+  const company = process.env.COMPANY_NAME || 'The Abstruct Vault';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
       <h2 style="color: #c4a47a;">Response to your message</h2>
@@ -332,7 +332,7 @@ export const sendPaymentVerificationEmail = async (order, user, status, rejectio
         </a>
       `}
       
-      <p style="margin-top: 20px;">Best regards,<br>${process.env.COMPANY_NAME || 'Horizon Supplies'} Team</p>
+      <p style="margin-top: 20px;">Best regards,<br>${process.env.COMPANY_NAME || 'The Abstruct Vault'} Team</p>
     </div>
   `;
   
