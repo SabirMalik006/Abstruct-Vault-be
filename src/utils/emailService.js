@@ -9,21 +9,21 @@ const stripHtmlToText = (html = '') =>
   html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const getEmailConfig = () => {
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'send@theabstructvault.com';
-  const fromName = process.env.RESEND_FROM_NAME || process.env.COMPANY_NAME || 'The Abstruct Vault';
+  const companyName = process.env.RESEND_FROM_NAME || process.env.COMPANY_NAME || 'The Abstract Vault';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'send@theabstractvault.com';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const adminContactEmail = process.env.ADMIN_CONTACT_EMAIL || 'info@theabstructvault.com';
+  const adminContactEmail = process.env.ADMIN_CONTACT_EMAIL || process.env.COMPANY_EMAIL || 'info@theabstractvault.com';
 
-  return { fromEmail, fromName, frontendUrl, adminContactEmail };
+  return { companyName, fromEmail, frontendUrl, adminContactEmail };
 };
 
 let resendClient = null;
 let resendKeyUsed = null;
+
 const getResendClient = () => {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return null;
 
-  // Re-init if key changes between environments
   if (!resendClient || resendKeyUsed !== apiKey) {
     resendClient = new Resend(apiKey);
     resendKeyUsed = apiKey;
@@ -36,14 +36,15 @@ const getResendClient = () => {
 export const sendEmail = async (to, subject, html, replyTo) => {
   const resend = getResendClient();
   if (!resend) {
-    return { success: false, error: 'Email service not configured. Missing RESEND_API_KEY.' };
+    console.error('Email service not configured. Missing RESEND_API_KEY.');
+    return { success: false, error: 'Email service not configured.' };
   }
 
   try {
-    const { fromEmail, fromName } = getEmailConfig();
+    const { fromEmail, companyName } = getEmailConfig();
 
     const payload = {
-      from: `${fromName} <${fromEmail}>`,
+      from: `${companyName} <${fromEmail}>`,
       to: Array.isArray(to) ? to : [to],
       subject,
       html,
@@ -57,11 +58,13 @@ export const sendEmail = async (to, subject, html, replyTo) => {
     const { data, error } = await resend.emails.send(payload);
 
     if (error) {
+      console.error('Resend Error:', error);
       return { success: false, error: error.message || 'Resend failed' };
     }
 
     return { success: true, messageId: data?.id };
   } catch (err) {
+    console.error('Email Send Exception:', err);
     return { success: false, error: err.message || 'Email send failed' };
   }
 };
@@ -301,44 +304,51 @@ export const sendContactReply = async (contact, replyMessage) => {
 // Existing: Payment verification (kept as-is)
 // ============================================
 export const sendPaymentVerificationEmail = async (order, user, status, rejectionReason = '') => {
+  const { companyName, frontendUrl } = getEmailConfig();
   const statusText = status === 'approved' ? 'APPROVED ✅' : 'REJECTED ❌';
   const statusColor = status === 'approved' ? '#27ae60' : '#e74c3c';
   
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: ${statusColor};">Payment Verification ${statusText}</h2>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 12px;">
+      <h2 style="color: ${statusColor}; text-align: center;">Payment Verification ${statusText}</h2>
       <p>Dear ${user.name},</p>
-      <p>Your payment for order #${order._id.slice(-8)} has been <strong>${status}</strong>.</p>
+      <p>Your payment for order <strong>#${order._id.toString().slice(-8)}</strong> has been <strong>${status}</strong>.</p>
       
       ${status === 'approved' ? `
-        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 15px 0;">
-          <p><strong>✓ Payment Verified!</strong></p>
-          <p>Your order is now being processed. You will receive shipping updates soon.</p>
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #27ae60;">
+          <p style="margin: 0; color: #2e7d32;"><strong>✓ Payment Verified!</strong></p>
+          <p style="margin: 8px 0 0;">Your order is now being processed. You will receive shipping updates soon.</p>
         </div>
-        <a href="${process.env.FRONTEND_URL}/dashboard/orders/${order._id}" 
-           style="background: #c4a47a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-          Track Order
-        </a>
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${frontendUrl}/dashboard/orders/${order._id}" 
+             style="background: #c4a47a; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Track Order
+          </a>
+        </div>
       ` : `
-        <div style="background: #ffebee; padding: 15px; border-radius: 8px; margin: 15px 0;">
-          <p><strong>✗ Payment Verification Failed</strong></p>
-          <p><strong>Reason:</strong> ${rejectionReason || 'Payment proof could not be verified'}</p>
-          <p>Please contact our support team to resolve this issue.</p>
+        <div style="background: #ffebee; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #e74c3c;">
+          <p style="margin: 0; color: #c62828;"><strong>✗ Payment Verification Failed</strong></p>
+          <p style="margin: 8px 0 0;"><strong>Reason:</strong> ${rejectionReason || 'Payment proof could not be verified'}</p>
         </div>
-        <p>If you've already paid, please contact us with your transaction details.</p>
-        <a href="${process.env.FRONTEND_URL}/contact" 
-           style="background: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-          Contact Support
-        </a>
+        <p>If you've already paid, please contact our support team with your transaction details.</p>
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${frontendUrl}/contact" 
+             style="background: #e74c3c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Contact Support
+          </a>
+        </div>
       `}
       
-      <p style="margin-top: 20px;">Best regards,<br>${process.env.COMPANY_NAME || 'The Abstruct Vault'} Team</p>
+      <p style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; color: #666;">
+        Best regards,<br>
+        <strong>${companyName} Team</strong>
+      </p>
     </div>
   `;
   
   return sendEmail(
     user.email,
-    `Payment Verification ${statusText} - Order #${order._id.slice(-8)}`,
+    `Payment Verification ${statusText} - Order #${order._id.toString().slice(-8)}`,
     html
   );
 };
