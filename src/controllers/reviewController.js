@@ -71,6 +71,28 @@ export const approveReview = asyncHandler(async (req, res) => {
   res.json({ success: true, data: review });
 });
 
+// @desc    Toggle featured status
+// @route   PUT /api/reviews/:id/feature
+export const toggleFeaturedReview = asyncHandler(async (req, res) => {
+  const review = await Review.findById(req.params.id);
+  if (!review) throw new AppError('Review not found', 404);
+  
+  review.isFeatured = !review.isFeatured;
+  await review.save();
+  
+  res.json({ success: true, data: review });
+});
+
+// @desc    Get featured reviews
+// @route   GET /api/reviews/featured
+export const getFeaturedReviews = asyncHandler(async (req, res) => {
+  const reviews = await Review.find({ isFeatured: true })
+    .populate('user', 'name avatar')
+    .populate('product', 'name');
+  
+  res.json({ success: true, data: reviews });
+});
+
 // @desc    Delete review
 // @route   DELETE /api/reviews/:id
 export const deleteReview = asyncHandler(async (req, res) => {

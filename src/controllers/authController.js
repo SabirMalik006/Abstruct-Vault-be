@@ -13,7 +13,14 @@ const generateToken = (id) => {
 // @desc    Register user
 // @route   POST /api/auth/register
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  let { name, email, password } = req.body;
+  
+  if (!email || !password || !name) {
+    throw new AppError('Please provide name, email and password', 400);
+  }
+
+  // Normalize email
+  email = email.toLowerCase().trim();
   
   const userExists = await User.findOne({ email });
   if (userExists) {
@@ -53,7 +60,14 @@ export const register = asyncHandler(async (req, res) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 export const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+  
+  if (!email || !password) {
+    throw new AppError('Please provide email and password', 400);
+  }
+
+  // Normalize email
+  email = email.toLowerCase().trim();
   
   const user = await User.findOne({ email }).select('+password');
   
@@ -78,16 +92,13 @@ export const login = asyncHandler(async (req, res) => {
 // @desc    Get current user profile
 // @route   GET /api/auth/profile
 export const getProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
-  if (!user) throw new AppError('User not found', 404);
-  res.json({ success: true, data: user });
+  res.json({ success: true, data: req.user });
 });
 
 // @desc    Update current user profile
 // @route   PUT /api/auth/profile
 export const updateProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
-  if (!user) throw new AppError('User not found', 404);
+  const user = req.user;
 
   const { name, phone, address } = req.body;
   
@@ -112,8 +123,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
 // @desc    Add new address
 // @route   POST /api/auth/addresses
 export const addAddress = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
-  if (!user) throw new AppError('User not found', 404);
+  const user = req.user;
 
   const newAddress = { ...req.body, isDefault: user.addresses.length === 0 };
   user.addresses.push(newAddress);
@@ -125,8 +135,7 @@ export const addAddress = asyncHandler(async (req, res) => {
 // @desc    Update address
 // @route   PUT /api/auth/addresses/:id
 export const updateAddress = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
-  if (!user) throw new AppError('User not found', 404);
+  const user = req.user;
 
   const address = user.addresses.id(req.params.id);
   if (!address) throw new AppError('Address not found', 404);
@@ -140,8 +149,7 @@ export const updateAddress = asyncHandler(async (req, res) => {
 // @desc    Delete address
 // @route   DELETE /api/auth/addresses/:id
 export const deleteAddress = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
-  if (!user) throw new AppError('User not found', 404);
+  const user = req.user;
 
   user.addresses = user.addresses.filter(addr => addr._id.toString() !== req.params.id);
   await user.save();

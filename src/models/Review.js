@@ -35,6 +35,10 @@ const reviewSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isFeatured: {
+    type: Boolean,
+    default: false
+  },
   helpful: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
